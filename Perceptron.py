@@ -1,6 +1,6 @@
 # Henry Dinh
 # CS 6375.001
-# Assignment 3 - Perceptron algorithm for text classification
+# Assignment 3 - Perceptron training algorithm for text classification
 # To test the program, read the README file for instructions
 
 import os
@@ -79,6 +79,30 @@ def removeStopWords(stops, data_set):
     return filtered_data_set
 
 
+# Extracts the vocabulary of all the text in a data set
+def extractVocab(data_set):
+    v = []
+    for i in data_set:
+        for j in data_set[i].getWordFreqs():
+            if j not in v:
+                v.append(j)
+    return v
+
+
+# learns weights using the perceptron training rule
+def learnWeights(weights, learning_constant, training_set, num_iterations):
+    # Adjust weights num_iterations times
+    for i in num_iterations:
+        # Go through all training instances and update weights
+        for x in training_set:
+            pass
+
+
+# applies the algorithm to test accuracy on the test set
+def apply():
+    pass
+
+
 # Takes training directory containing spam and ham folder. Same with test directory
 # Also takes number of iterations and learning rate as parameters
 def main(train_dir, test_dir):
@@ -94,9 +118,21 @@ def main(train_dir, test_dir):
     # ham = 0 for not spam, spam = 1 for is spam
     classes = ["ham", "spam"]
 
-    # Number of iterations and learning constant taken from command line execution
+    # Number of iterations and learning constant (usually around .1 or .01)
     iterations = 0
     learning_constant = 0.0
+
+    # Extract training set vocabulary
+    training_set_vocab = extractVocab(training_set)
+    filtered_training_set_vocab = extractVocab(filtered_training_set)
+
+    # store weights as dictionary. w0 initiall 0.0, others initially 0.0. token : weight value
+    weights = {'weight_zero': 0.0}
+    filtered_weights = {'weight_zero': 0.0}
+    for i in training_set_vocab:
+        weights[i] = 0.0
+    for i in filtered_training_set_vocab:
+        filtered_weights[i] = 0.0
 
     # Set up data sets. Dictionaries containing the text, word frequencies, and true/learned classifications
     makeDataSet(training_set, train_dir + "/spam", classes[1])
@@ -107,6 +143,11 @@ def main(train_dir, test_dir):
     # Set up data sets without stop words
     filtered_training_set = removeStopWords(stop_words, training_set)
     filtered_test_set = removeStopWords(stop_words, test_set)
+
+    # Learn weights
+
+
+    #Apply the algorithm on the test set and report accuracy
 
 
 if __name__ == '__main__':
