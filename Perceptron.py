@@ -90,22 +90,47 @@ def extractVocab(data_set):
 
 
 # learns weights using the perceptron training rule
-def learnWeights(weights, learning_constant, training_set, num_iterations):
+def learnWeights(weights, learning_constant, training_set, num_iterations, classes):
     # Adjust weights num_iterations times
     for i in num_iterations:
         # Go through all training instances and update weights
-        for x in training_set:
-            pass
+        for d in training_set:
+            # Used to get the current perceptron's output. If > 0, then spam, else output ham.
+            weight_sum = weights['weight_zero']
+            for f in training_set[d].getWordFreqs():
+                if f not in weights:
+                    weights[f] = 0.0
+                weight_sum += weights[f] * training_set[d].getWordFreqs()[f]
+            perceptron_output = 0.0
+            if weight_sum > 0:
+                perceptron_output = 1.0
+            target_value = 0.0
+            if training_set[d].getTrueClass() == classes[1]:
+                target_value = 1.0
+            # Update all weights that are relevant to the instance at hand
+            for w in training_set[d].getWordFreqs():
+                weights[w] += float(learning_constant) * float((target_value - perceptron_output)) * \
+                              float(training_set[d].getWordFreqs()[w])
 
 
-# applies the algorithm to test accuracy on the test set
-def apply():
-    pass
+# applies the algorithm to test accuracy on the test set. Returns the perceptron output
+def apply(weights, classes, instance):
+    weight_sum = weights['weight_zero']
+    for i in instance.getWordFreqs():
+        if i not in weights:
+            weights[i] = 0.0
+        weight_sum += weights[i] * instance.getWordFreqs()[i]
+    if weight_sum > 0:
+        # return is spam
+        return 1
+    else:
+        # return is ham
+        return 0
 
 
 # Takes training directory containing spam and ham folder. Same with test directory
 # Also takes number of iterations and learning rate as parameters
-def main(train_dir, test_dir):
+def main(train_dir, test_dir, iterations, learning_constant):
     # Create dictionaries and lists needed
     training_set = {}
     test_set = {}
@@ -119,15 +144,15 @@ def main(train_dir, test_dir):
     classes = ["ham", "spam"]
 
     # Number of iterations and learning constant (usually around .1 or .01)
-    iterations = 0
-    learning_constant = 0.0
+    iterations = iterations
+    learning_constant = learning_constant
 
     # Extract training set vocabulary
     training_set_vocab = extractVocab(training_set)
     filtered_training_set_vocab = extractVocab(filtered_training_set)
 
-    # store weights as dictionary. w0 initiall 0.0, others initially 0.0. token : weight value
-    weights = {'weight_zero': 0.0}
+    # store weights as dictionary. w0 initiall 1.0, others initially 1.0. token : weight value
+    weights = {'weight_zero': 1.0}
     filtered_weights = {'weight_zero': 0.0}
     for i in training_set_vocab:
         weights[i] = 0.0
@@ -145,10 +170,27 @@ def main(train_dir, test_dir):
     filtered_test_set = removeStopWords(stop_words, test_set)
 
     # Learn weights
-
+    learnWeights(weights, learning_constant, training_set, iterations, classes)
 
     #Apply the algorithm on the test set and report accuracy
+    num_correct_guesses = 0
+    for i in test_set:
+        guess = apply(weights, classes, test_set[i])
+        if guess == 1:
+            test_set[i].setLearnedClass(classes[1])
+            if test_set[i].getTrueClass() == test_set[i].getLearnedClass():
+                num_correct_guesses += 1
+        if guess == 0:
+            test_set[i].setLearnedClass(classes[0])
+            if test_set[i].getTrueClass() == test_set[i].getLearnedClass():
+                num_correct_guesses += 1
+
+    # Report accuracy
+    print "Learning constant: %.4f" % float(learning_constant)
+    print "Number of iterations: %d" % int(iterations)
+    print "Emails classified correctly: %d/%d" % (num_correct_guesses, len(test_set))
+    print "Accuracy: %.4f%%" % (float(num_correct_guesses) / float(len(test_set)) * 100.0)
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
