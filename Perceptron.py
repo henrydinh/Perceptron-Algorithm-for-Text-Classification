@@ -147,18 +147,6 @@ def main(train_dir, test_dir, iterations, learning_constant):
     iterations = iterations
     learning_constant = learning_constant
 
-    # Extract training set vocabulary
-    training_set_vocab = extractVocab(training_set)
-    filtered_training_set_vocab = extractVocab(filtered_training_set)
-
-    # store weights as dictionary. w0 initiall 1.0, others initially 1.0. token : weight value
-    weights = {'weight_zero': 1.0}
-    filtered_weights = {'weight_zero': 0.0}
-    for i in training_set_vocab:
-        weights[i] = 0.0
-    for i in filtered_training_set_vocab:
-        filtered_weights[i] = 0.0
-
     # Set up data sets. Dictionaries containing the text, word frequencies, and true/learned classifications
     makeDataSet(training_set, train_dir + "/spam", classes[1])
     makeDataSet(training_set, train_dir + "/ham", classes[0])
@@ -169,8 +157,21 @@ def main(train_dir, test_dir, iterations, learning_constant):
     filtered_training_set = removeStopWords(stop_words, training_set)
     filtered_test_set = removeStopWords(stop_words, test_set)
 
-    # Learn weights
+    # Extract training set vocabulary
+    training_set_vocab = extractVocab(training_set)
+    filtered_training_set_vocab = extractVocab(filtered_training_set)
+
+    # store weights as dictionary. w0 initiall 1.0, others initially 1.0. token : weight value
+    weights = {'weight_zero': 1.0}
+    filtered_weights = {'weight_zero': 1.0}
+    for i in training_set_vocab:
+        weights[i] = 0.0
+    for i in filtered_training_set_vocab:
+        filtered_weights[i] = 0.0
+
+    # Learn weights using the training_set and the filtered_training_set
     learnWeights(weights, learning_constant, training_set, iterations, classes)
+    learnWeights(filtered_weights, learning_constant, filtered_training_set, iterations, classes)
 
     #Apply the algorithm on the test set and report accuracy
     num_correct_guesses = 0
@@ -185,11 +186,26 @@ def main(train_dir, test_dir, iterations, learning_constant):
             if test_set[i].getTrueClass() == test_set[i].getLearnedClass():
                 num_correct_guesses += 1
 
+    # Apply algorithm again on test set without any stop words and report accuracy
+    filt_num_correct_guesses = 0
+    for i in filtered_test_set:
+        guess = apply(filtered_weights, classes, filtered_test_set[i])
+        if guess == 1:
+            filtered_test_set[i].setLearnedClass(classes[1])
+            if filtered_test_set[i].getTrueClass() == filtered_test_set[i].getLearnedClass():
+                filt_num_correct_guesses += 1
+        if guess == 0:
+            filtered_test_set[i].setLearnedClass(classes[0])
+            if filtered_test_set[i].getTrueClass() == filtered_test_set[i].getLearnedClass():
+                filt_num_correct_guesses += 1
+
     # Report accuracy
     print "Learning constant: %.4f" % float(learning_constant)
     print "Number of iterations: %d" % int(iterations)
     print "Emails classified correctly: %d/%d" % (num_correct_guesses, len(test_set))
     print "Accuracy: %.4f%%" % (float(num_correct_guesses) / float(len(test_set)) * 100.0)
+    print "Filtered emails classified correctly: %d/%d" % (filt_num_correct_guesses, len(filtered_test_set))
+    print "Filtered accuracy: %.4f%%" % (float(filt_num_correct_guesses) / float(len(filtered_test_set)) * 100.0)
 
 
 if __name__ == '__main__':
